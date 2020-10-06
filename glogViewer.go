@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/widget"
 	"image/color"
 	"os"
+	"strings"
 )
 
 type glogger struct {
@@ -18,6 +19,11 @@ type glogger struct {
 	container       *fyne.Container
 	canvas          fyne.CanvasObject
 }
+
+var (
+	red    = color.RGBA{R: 0xff, G: 0, B: 0, A: 0xff}
+	yellow = color.RGBA{R: 0xff, G: 0xff, B: 0, A: 0xff}
+)
 
 func (g *glogger) handleTypedKey(ke *fyne.KeyEvent) {
 	g.scrollContainer.Scrolled(&fyne.ScrollEvent{
@@ -41,11 +47,24 @@ func (g *glogger) handleTypedRune(r rune) {
 func (g *glogger) setup(app fyne.App) {
 	g.autoScroll = true
 	g.window = app.NewWindow("glogViewer")
+	g.window.Resize(fyne.Size{Width: 1000, Height: 600})
 	g.container = fyne.NewContainerWithLayout(layout.NewVBoxLayout())
 	g.scrollContainer = *widget.NewScrollContainer(g.container)
 	g.window.SetContent(&g.scrollContainer)
 	g.window.Canvas().SetOnTypedKey(g.handleTypedKey)
 	g.window.Canvas().SetOnTypedRune(g.handleTypedRune)
+}
+
+func (g *glogger) addLine(line string) {
+	switch {
+	case strings.Contains(line, "ERROR"):
+		g.container.AddObject(canvas.NewText(line, yellow))
+	case strings.Contains(line, "FATAL"):
+		g.container.AddObject(canvas.NewText(line, red))
+	default:
+		g.container.AddObject(canvas.NewText(line, color.White))
+	}
+	g.container.Refresh()
 }
 
 func main() {
@@ -58,8 +77,9 @@ func main() {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			line := scanner.Text()
-			glog.container.AddObject(canvas.NewText(line, color.White))
-			glog.container.Refresh()
+			glog.addLine(line)
+			//glog.container.AddObject(canvas.NewText(line, color.White))
+			//glog.container.Refresh()
 			if glog.autoScroll {
 				glog.scrollContainer.ScrollToBottom()
 			}
