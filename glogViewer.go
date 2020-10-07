@@ -15,9 +15,8 @@ import (
 type glogger struct {
 	autoScroll      bool
 	window          fyne.Window
-	scrollContainer widget.ScrollContainer
+	scrollContainer *widget.ScrollContainer
 	container       *fyne.Container
-	canvas          fyne.CanvasObject
 }
 
 var (
@@ -26,11 +25,16 @@ var (
 )
 
 func (g *glogger) handleTypedKey(ke *fyne.KeyEvent) {
-	g.scrollContainer.Scrolled(&fyne.ScrollEvent{
-		PointEvent: fyne.PointEvent{},
-		DeltaX:     0,
-		DeltaY:     0,
-	})
+	delta := g.container.Objects[0].Size().Height
+	switch ke.Name {
+	case fyne.KeyUp:
+		g.scrollContainer.Scrolled(&fyne.ScrollEvent{DeltaY: delta})
+	case fyne.KeyDown:
+		g.scrollContainer.Scrolled(&fyne.ScrollEvent{DeltaY: -delta})
+	default:
+		return //no key handled, leave autoScroll untouched
+	}
+	g.autoScroll = false
 }
 
 func (g *glogger) handleTypedRune(r rune) {
@@ -49,8 +53,8 @@ func (g *glogger) setup(app fyne.App) {
 	g.window = app.NewWindow("glogViewer")
 	g.window.Resize(fyne.Size{Width: 1000, Height: 600})
 	g.container = fyne.NewContainerWithLayout(layout.NewVBoxLayout())
-	g.scrollContainer = *widget.NewScrollContainer(g.container)
-	g.window.SetContent(&g.scrollContainer)
+	g.scrollContainer = widget.NewScrollContainer(g.container)
+	g.window.SetContent(g.scrollContainer)
 	g.window.Canvas().SetOnTypedKey(g.handleTypedKey)
 	g.window.Canvas().SetOnTypedRune(g.handleTypedRune)
 }
@@ -78,8 +82,6 @@ func main() {
 		for scanner.Scan() {
 			line := scanner.Text()
 			glog.addLine(line)
-			//glog.container.AddObject(canvas.NewText(line, color.White))
-			//glog.container.Refresh()
 			if glog.autoScroll {
 				glog.scrollContainer.ScrollToBottom()
 			}
