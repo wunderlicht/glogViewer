@@ -59,11 +59,11 @@ func (g *glogger) setup(app fyne.App) {
 	g.window.Canvas().SetOnTypedRune(g.handleTypedRune)
 }
 
-func (g *glogger) addLine(line string) {
-	switch {
-	case strings.Contains(line, "ERROR"):
+func (g *glogger) addLine(line string, severity string) {
+	switch severity {
+	case "ERROR":
 		g.container.AddObject(canvas.NewText(line, yellow))
-	case strings.Contains(line, "FATAL"):
+	case "FATAL":
 		g.container.AddObject(canvas.NewText(line, red))
 	default:
 		g.container.AddObject(canvas.NewText(line, color.White))
@@ -89,8 +89,8 @@ func main() {
 		scanner := bufio.NewScanner(os.Stdin)
 		for scanner.Scan() {
 			line := scanner.Text()
-			glog.addLine(line)
 			source, severity, msg := glog.splitLine(line)
+			glog.addLine(line, severity)
 			if severity == "FATAL" {
 				myApp.SendNotification(&fyne.Notification{
 					Title:   source + " " + severity,
