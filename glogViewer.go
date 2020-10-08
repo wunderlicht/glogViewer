@@ -71,6 +71,14 @@ func (g *glogger) addLine(line string) {
 	g.container.Refresh()
 }
 
+func (g *glogger) splitLine(line string) (source string, severity string, msg string) {
+	parts := strings.Split(line, "|")
+	source = parts[0]
+	severity = parts[1]
+	msg = parts[2]
+	return
+}
+
 func main() {
 	myApp := app.New()
 	glog := new(glogger)
@@ -82,6 +90,14 @@ func main() {
 		for scanner.Scan() {
 			line := scanner.Text()
 			glog.addLine(line)
+			source, severity, msg := glog.splitLine(line)
+			if severity == "FATAL" {
+				myApp.SendNotification(&fyne.Notification{
+					Title:   source + " " + severity,
+					Content: msg,
+				})
+			}
+
 			if glog.autoScroll {
 				glog.scrollContainer.ScrollToBottom()
 			}
